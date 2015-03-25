@@ -61,7 +61,7 @@ tic
             iterador=iterador+p;
         end
         
-        U=A;
+        U=A; %Le asigno lo que queda de A, a U
         U=LimpiarA(U,N,p); %Limpio los bloques de A que no toque
     
    toc
