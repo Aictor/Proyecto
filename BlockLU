@@ -1,0 +1,68 @@
+function [L,U]=BlockLU(A,N,p)
+tic
+        %------------------Validacion de la data--------------------------
+        [dim1,dim2]=size(A);
+        if (dim1~=N*p) || (dim2~=N*p) || (N<0) || (p<0) 
+          disp('Error, la data es inválida!')
+      
+           return
+        end
+        
+        if A==zeros(N*p,N*p)
+            disp ('Error, la matriz A contiene 0 en todos sus elementos')
+            return
+        end
+        %-----Fin Validacion de la data------------------------------------
+        U=zeros(size(A)); %Declaro mi matriz U gigante
+        L=eye(size(A)); %Declaro mi matriz L gigante
+        iterador=1; %incrementador que recorrera por bloques
+        hola=A; %Copia de la matriz original A
+                %Puesto que yo la modifico directamente, y A va cambiando...
+                %Realizo esta copia en caso de ser necesario para ti
+                iterp1=1; %mis iteradores
+                iterp2=p;
+        %Ciclo 
+        while iterador~=N*p+1 %Recorro toda la matriz pasando de bloque en bloque
+            iter_interno=iterador+p;        
+            while iter_interno~=N*p+1 %Recorro internamente n-1 bloques iterador-i veces
+                        pivote=A(iterp1:iterp2,iterp1:iterp2);
+                        bandera=chequearPivote(pivote);
+                        
+                        if bandera==1
+                            disp('Todos los elementos del bloque pivote son 0, por tanto, no tiene factorizacion LU')
+                        return
+                        end
+                        
+                        C=A(iter_interno:iter_interno+p-1,iterador:iterador+p-1);
+                        
+                        %Hago la factorizacion QR de mi matriz pivote         
+                        [Q,R]=qr(pivote);
+                        %Como Q es ortogonal... necesito convertirla a
+                        %triangular
+                        [L2,U2,P2]=lu(Q);
+                        %Realizo esta factorizacion porque con P, es la
+                        %única manera de que L sea triangular inferior unitaria
+                        [despeje1]=Sustit_Adelante(R',C'); %Porque R cambia a triangular inferior
+                        [despeje2]=Sustit_Adelante(U2',despeje1); %Porque U cambia a triangular inferior
+                        [soltrans]=Sustit_Atras((L2'),despeje2); %Porque L cambia a triangular superior
+               
+                        sol=soltrans'*P2;
+                    
+                        L(iter_interno:p+iter_interno-1,iterador:iterador+p-1)=sol;
+                           
+                            for z=1:p:N*p 
+                                A(iter_interno:p+iter_interno-1,z:z+p-1)= A(iter_interno:p+iter_interno-1,z:z+p-1)-(sol*A(iterador:p+iterador-1,z:z+p-1));
+                            end
+                           
+                  iter_interno=iter_interno+p;
+            end
+            iterp1=iterp1+p;
+            iterp2=iterp2+p;
+            iterador=iterador+p;
+        end
+        
+        U=A;
+        U=LimpiarA(U,N,p); %Limpio los bloques de A que no toque
+    
+   toc
+end
